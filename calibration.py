@@ -8,7 +8,7 @@ SQUARE_SIZE = 15.0#mm
 PATH_TO_CALIBRATION_IMAGES = '../calib_images_rect/'
 
 cornerCoords = np.zeros((PATTERN_HEIGHT*PATTERN_WIDTH, 3), np.float32)
-cornerCoords[:,:2] = np.mgrid[0:PATTERN_WIDTH*SQUARE_SIZE:SQUARE_SIZE,0:PATTERN_HEIGHT*SQUARE_SIZE:SQUARE_SIZE].T.reshape(-1,2) # Used to fill worldCoords
+cornerCoords[:,:2] = np.mgrid[0:PATTERN_WIDTH*SQUARE_SIZE:SQUARE_SIZE,0:PATTERN_HEIGHT*SQUARE_SIZE:SQUARE_SIZE].T.reshape(-1,2) # Used to fill objectPoints
 imageSize = None
 
 imagesCam1 = glob.glob(PATH_TO_CALIBRATION_IMAGES + 'frame0_*.png')
