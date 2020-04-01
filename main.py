@@ -55,17 +55,10 @@ def decodePhase(primary, secondary):
         for y in range(width):
             wrappedPrimary = np.angle(fftPrimary[x][y][1]) # Get phase from the second channel
             wrappedSecondary = np.angle(fftSecondary[x][y][1]) # Get phase from the second channel
-            # fftPrimary = np.fft.fft(tmpPhasePrimary[x][y]) # FFT across time dimension
-            # wrappedPrimary = np.angle(fftPrimary[1]) # Get phase from the second channel
-            # fftSecondary = np.fft.fft(tmpPhaseSecondary[x][y]) # FFT across time dimension
-            # wrappedSecondary = np.angle(fftSecondary[1]) # Get phase from the second channel
 
             wrappedPrimaryImg[x][y] = wrappedPrimary
             heterodynePhase[x][y] = (wrappedPrimary - wrappedSecondary) % (2 * np.pi)
-    # heterodynePhase = (wrappedPrimary - wrappedSecondary) % (2 * np.pi)
-
-    cv2.imshow('wrapped phase1', wrappedPrimaryImg)
-    cv2.waitKey()
+            
     return heterodynePhase
 
 def maskImage(img, mask):
@@ -85,13 +78,25 @@ def maskImage(img, mask):
     return img
 
 # === Load images and create masks ===
-imagesRefCam1Fn = glob.glob(PATH_TO_IMAGES + 'frames0_[0-1].png')
-imagesPrimaryPhaseCam1Fn = glob.glob(PATH_TO_IMAGES + 'frames0_[2-9].png')
-imagesSecondaryPhaseCam1Fn = glob.glob(PATH_TO_IMAGES_SEC_CAM1 + '*.png')
+imagesRefCam1Fn = []
+imagesPrimaryPhaseCam1Fn = []
+imagesSecondaryPhaseCam1Fn = []
+for index in [0, 1]:
+    imagesRefCam1Fn.append(PATH_TO_IMAGES + 'frames0_' + str(index) + '.png')
+for index in range(2, 10):
+    imagesPrimaryPhaseCam1Fn.append(PATH_TO_IMAGES + 'frames0_' + str(index) + '.png')
+for index in range(10, 18):
+    imagesSecondaryPhaseCam1Fn.append(PATH_TO_IMAGES_SEC_CAM1 + 'frames0_' + str(index) + '.png')
 
-imagesRefCam2Fn = glob.glob(PATH_TO_IMAGES + 'frames1_[0-1].png')
-imagesPrimaryPhaseCam2Fn = glob.glob(PATH_TO_IMAGES + 'frames1_[2-9].png')
-imagesSecondaryPhaseCam2Fn = glob.glob(PATH_TO_IMAGES_SEC_CAM2 + '*.png')
+imagesRefCam2Fn = []
+imagesPrimaryPhaseCam2Fn = []
+imagesSecondaryPhaseCam2Fn = []
+for index in [0, 1]:
+    imagesRefCam2Fn.append(PATH_TO_IMAGES + 'frames1_' + str(index) + '.png')
+for index in range(2, 10):
+    imagesPrimaryPhaseCam2Fn.append(PATH_TO_IMAGES + 'frames1_' + str(index) + '.png')
+for index in range(10, 18):
+    imagesSecondaryPhaseCam2Fn.append(PATH_TO_IMAGES_SEC_CAM1 + 'frames1_' + str(index) + '.png')
 
 imagesRefCam1 = loadImagesInGrayscale(imagesRefCam1Fn)
 imagesPrimaryPhaseCam1 = loadImagesInGrayscale(imagesPrimaryPhaseCam1Fn)
@@ -110,8 +115,8 @@ imageMaskCam2 = getMask(imagesRefCam2[0])
 
 # === Decode phase ===
 unwrappedPhaseCam1 = decodePhase(imagesPrimaryPhaseCam1, imagesSecondaryPhaseCam1)
-# maskedCam1 = maskImage(unwrappedPhaseCam1, imageMaskCam1)
-cv2.imshow('phase1', unwrappedPhaseCam1)
-cv2.waitKey()
+maskedCam1 = maskImage(unwrappedPhaseCam1, imageMaskCam1)
+plt.imshow(maskedCam1, cmap="gray") 
+plt.show()
 
 cv2.destroyAllWindows()
