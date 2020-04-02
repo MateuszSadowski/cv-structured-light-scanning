@@ -2,6 +2,8 @@ import cv2
 import numpy as np
 import glob
 import matplotlib.pyplot as plt
+import pandas as pd
+import os.path
 
 PATH_TO_IMAGES = '../angel_rect/'
 PATH_TO_IMAGES_SEC_CAM1 = '../angel_rect/secondary_cam1/'
@@ -10,12 +12,14 @@ LOW_INTENSITY_CUTOFF = 0.1 * 255
 HIGH_INTENSITY_CUTOFF = 0.9 * 255
 
 def loadImagesInGrayscale(images):
+    print('loadImagesInGrayscale')
     gray = []
     for image in images:
         gray.append(cv2.imread(image, cv2.IMREAD_GRAYSCALE))
     return gray
 
 def getMask(image):
+    print('getMask')
     imageSize = image.shape[::-1]
     mask = np.ones((imageSize[1], imageSize[0]))
     for x in range(imageSize[1]):
@@ -26,6 +30,7 @@ def getMask(image):
     return mask
 
 def decodePhase(primary, secondary):
+    print('decodePhase')
     numOfImages = len(primary)
     height = len(primary[0]) if numOfImages > 0 else 0
     width = len(primary[0][0]) if height > 0 else 0
@@ -58,10 +63,11 @@ def decodePhase(primary, secondary):
 
             wrappedPrimaryImg[x][y] = wrappedPrimary
             heterodynePhase[x][y] = (wrappedPrimary - wrappedSecondary) % (2 * np.pi)
-            
+
     return heterodynePhase
 
 def maskImage(img, mask):
+    print('maskImage')
     imgHeight = len(img)
     imgWidth = len(img[0]) if imgHeight > 0 else 0
     maskHeight = len(mask)
@@ -77,7 +83,34 @@ def maskImage(img, mask):
     
     return img
 
-# === Load images and create masks ===
+def registerContinous(code1, code2, mask1, mask2):
+    print('registerContinous')
+    imgHeight = len(code1)
+    imgWidth = len(code1[0]) if imgHeight > 0 else 0
+    q1 = []
+    q2 = []
+
+    for x in range(imgHeight):
+        for y in range(imgWidth):
+            if mask1[x][y] == 0:
+                continue
+            phase1 = code1[x][y]
+            minDiff = float("inf")
+            minPixel = [-1, -1]
+            for y2 in range(imgWidth):
+                if mask2[x][y2] == 0:
+                    continue
+                diff = abs(phase1 - code2[x][y2])
+                if diff < minDiff:
+                    minDiff = diff
+                    minPixel = [x, y2]
+
+            q1.append([x, y])
+            q2.append(minPixel)
+
+    return q1, q2
+
+# === Create image paths ===
 imagesRefCam1Fn = []
 imagesPrimaryPhaseCam1Fn = []
 imagesSecondaryPhaseCam1Fn = []
@@ -96,27 +129,57 @@ for index in [0, 1]:
 for index in range(2, 10):
     imagesPrimaryPhaseCam2Fn.append(PATH_TO_IMAGES + 'frames1_' + str(index) + '.png')
 for index in range(10, 18):
-    imagesSecondaryPhaseCam2Fn.append(PATH_TO_IMAGES_SEC_CAM1 + 'frames1_' + str(index) + '.png')
+    imagesSecondaryPhaseCam2Fn.append(PATH_TO_IMAGES_SEC_CAM2 + 'frames1_' + str(index) + '.png')
 
-imagesRefCam1 = loadImagesInGrayscale(imagesRefCam1Fn)
-imagesPrimaryPhaseCam1 = loadImagesInGrayscale(imagesPrimaryPhaseCam1Fn)
-imagesSecondaryPhaseCam1 = loadImagesInGrayscale(imagesSecondaryPhaseCam1Fn)
+if os.path.isfile('q1.xlsx') and os.path.isfile('q2.xlsx'):
+    print('Loading precomputed point matches')
+    q1 = pd.read_excel('q1.xlsx')
+    q1.to_numpy()
+    q1 = q1.T
+    q2 = pd.read_excel('q2.xlsx')
+    q2.to_numpy()
+    q2 = q2.T
+else:
+    # === Load images and create masks ===
+    imagesRefCam1 = loadImagesInGrayscale(imagesRefCam1Fn)
+    imagesPrimaryPhaseCam1 = loadImagesInGrayscale(imagesPrimaryPhaseCam1Fn)
+    imagesSecondaryPhaseCam1 = loadImagesInGrayscale(imagesSecondaryPhaseCam1Fn)
 
-imagesRefCam2 = loadImagesInGrayscale(imagesRefCam2Fn)
-imagesPrimaryPhaseCam2 = loadImagesInGrayscale(imagesPrimaryPhaseCam2Fn)
-imagesSecondaryPhaseCam2 = loadImagesInGrayscale(imagesSecondaryPhaseCam2Fn)
+    imagesRefCam2 = loadImagesInGrayscale(imagesRefCam2Fn)
+    imagesPrimaryPhaseCam2 = loadImagesInGrayscale(imagesPrimaryPhaseCam2Fn)
+    imagesSecondaryPhaseCam2 = loadImagesInGrayscale(imagesSecondaryPhaseCam2Fn)
 
-imageMaskCam1 = getMask(imagesRefCam1[0])
-imageMaskCam2 = getMask(imagesRefCam2[0])
-# cv2.imshow('cam1', imageMaskCam1)
-# cv2.waitKey()
-# cv2.imshow('cam2', imageMaskCam2)
-# cv2.waitKey()
+    imageMaskCam1 = getMask(imagesRefCam1[0])
+    imageMaskCam2 = getMask(imagesRefCam2[0])
+    # cv2.imshow('cam1', imageMaskCam1)
+    # cv2.waitKey()
+    # cv2.imshow('cam2', imageMaskCam2)
+    # cv2.waitKey()
+    
+    # === Decode phase ===
+    unwrappedPhaseCam1 = decodePhase(imagesPrimaryPhaseCam1, imagesSecondaryPhaseCam1)
+    maskedCam1 = maskImage(unwrappedPhaseCam1, imageMaskCam1)
+    # plt.imshow(maskedCam1, cmap="gray") 
+    # plt.show()
+    unwrappedPhaseCam2 = decodePhase(imagesPrimaryPhaseCam2, imagesSecondaryPhaseCam2)
+    maskedCam2 = maskImage(unwrappedPhaseCam2, imageMaskCam2)
 
-# === Decode phase ===
-unwrappedPhaseCam1 = decodePhase(imagesPrimaryPhaseCam1, imagesSecondaryPhaseCam1)
-maskedCam1 = maskImage(unwrappedPhaseCam1, imageMaskCam1)
-plt.imshow(maskedCam1, cmap="gray") 
+    # === Find point matches ===
+    q1, q2 = registerContinous(maskedCam1, maskedCam2, imageMaskCam1, imageMaskCam2)
+    # TODO: Fix writing to file
+    q1.to_numpy()
+    q1 = q1.T
+    q2.to_numpy()
+    q2 = q2.T
+    df = pd.DataFrame(q1).T
+    df.to_excel(excel_writer = "q1.xlsx")
+    df = pd.DataFrame(q2).T
+    df.to_excel(excel_writer = "q2.xlsx")
+
+# === Plot point matches ===
+y = [q1.iloc[:,0], q2.iloc[:,0]]
+x = [q1.iloc[:,1], q2.iloc[:,1]]
+plt.plot(x,y)
 plt.show()
 
 cv2.destroyAllWindows()
