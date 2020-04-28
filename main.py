@@ -84,30 +84,25 @@ def maskImage(img, mask):
     return img
 
 def registerContinous(code1, code2, mask1, mask2):
-    print('registerContinous')
-    imgHeight = len(code1)
-    imgWidth = len(code1[0]) if imgHeight > 0 else 0
+    imgWidth = len(code1)
+    imgHeight = len(code1[0]) if imgWidth > 0 else 0
     q1 = []
     q2 = []
-
-    for x in range(imgHeight):
-        for y in range(imgWidth):
-            if mask1[x][y] == 0:
-                continue
-            phase1 = code1[x][y]
-            minDiff = float("inf")
-            minPixel = [-1, -1]
-            for y2 in range(imgWidth):
-                if mask2[x][y2] == 0:
-                    continue
-                diff = abs(phase1 - code2[x][y2])
-                if diff < minDiff:
-                    minDiff = diff
-                    minPixel = [x, y2]
-
-            q1.append([x, y])
-            q2.append(minPixel)
-
+    
+    for y in range(imgHeight):
+        for x in range(imgWidth):
+            if mask1[x][y] != 0:
+                phase1 = code1[x][y]
+                minDiff = float("inf")
+                minPixel = [-1, -1]
+                for y2 in range(imgWidth):
+                    if mask2[x][y2] != 0:
+                        diff = abs(phase1 - code2[x][y2])
+                        if diff < minDiff:
+                            minDiff = diff
+                            minPixel = [x, y2]
+                q1.append([x, y])
+                q2.append(minPixel)
     return q1, q2
 
 # === Create image paths ===
@@ -177,9 +172,12 @@ else:
     df.to_excel(excel_writer = "q2.xlsx")
 
 # === Plot point matches ===
+"""
+    #Takes a long time
 y = [q1.iloc[:,0], q2.iloc[:,0]]
 x = [q1.iloc[:,1], q2.iloc[:,1]]
 plt.plot(x,y)
 plt.show()
+"""
 
 cv2.destroyAllWindows()

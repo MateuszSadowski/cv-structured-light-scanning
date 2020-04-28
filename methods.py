@@ -14,8 +14,9 @@ HIGH_I_CUTOFF = 0.9 * 255
 
 
 def calcProjectionM(R, t, f, A):
-    A = np.c_[A,[1,1,1]]
+    A = np.c_[A,[0,0,0]]
     P = A*np.c_[R,t]
+    #P = A*np.c_[[0,0,0]]
     return P
 
 def loadImInGrayscale(images):

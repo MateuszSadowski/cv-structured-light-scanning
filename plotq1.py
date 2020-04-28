@@ -73,6 +73,22 @@ retval, cameraM1, distCoeffs1, cameraM2, distCoeffs2, R, T, E, F = cv2.stereoCal
 P1 = meth.calcProjectionM(R, T, F, cameraM1)
 P2 = meth.calcProjectionM(R, T, F, cameraM2)
 
+#P3 = np.matrix([[1591.9, -26.0076, 1.1688, 0],[-0.7923, 1.6583, 587.7426, 0],[-0.0560, 0.0057, 0.9984, 0]])
+
+#P4 = np.matrix([[1591.9, -26.0076, 1.1688, -2.6668e+05],[-0.7923, 1.6583, 587.7426, 9.5383e-11],[-0.0560, 0.0057, 0.9984, 6.7502e-14]])
+    
+
+P1 = [[1.5919e+03, -26.0076, 1.1688e+03, 0],[-0.7923, 1.6583e+03, 587.7426, 0],[-0.0560, 0.0057, 0.9984, 0]]
+
+P2 = [[1.5919e+03, -26.0076, 1.1688e+03, -2.6668e+05],[-0.7923, 1.6583e+03, 587.7426, 9.5383e-11],[-0.0560, 0.0057, 0.9984, 6.7502e-14]]
+   
+
+
+P1 = [[1.6552e+03, 0, 634.58, 0],[0, 1.6557e+03, 511.6732, 0],[0, 0, 1, 0]]
+P2 = [[1.4494e+03, 50.9313, 1.0304e+03, -2.4227e+05],[-168.3507, 1.6697e+03, 468.7081, 2.8061e+04],[-0.2524, 0.0101, 0.9676, 31.8761]]
+    
+ 
+
 #def calcProjectionM(R, t, f, beta, alpha, deltax, deltay):
  #   A = np.matrix([[f, f*beta, deltax],[0, alpha*f, deltay],[0,0,1]])
  #   P = A*np.c_[R,t]
@@ -80,13 +96,11 @@ P2 = meth.calcProjectionM(R, T, F, cameraM2)
 
 
 
-q1 = pd.read_excel('q1.xlsx')
+q1 = pd.read_excel('newq1.xlsx')
 q1.as_matrix()
-q1 = q1.T
-q2 = pd.read_excel('q2.xlsx')
-q2.as_matrix()
-q2 = q2.T
 
+q2 = pd.read_excel('newq2.xlsx')
+q2.as_matrix()
 
 
 y = [q1.iloc[:,0], q2.iloc[:,0]]
@@ -96,8 +110,8 @@ x = [q1.iloc[:,1], q2.iloc[:,1]]
 #plt.show()
 
 
-q1_1 = np.c_[q1,[1]*16383]
-q2_1 = np.c_[q2,[1]*16383]
+q1_1 = np.c_[q1,[1]*len(q1)]
+q2_1 = np.c_[q2,[1]*len(q2)]
 
 
 points = [[q1.iloc[:,0], q1.iloc[:,1]],[q2.iloc[:,0], q2.iloc[:,1]]]
@@ -121,28 +135,57 @@ for i, (q11, q22) in enumerate(zip(q1_1, q2_1)):
     point2 = q22;
     
     # do the triangulation
+    """
     B1 = point1[0] * P1[2] - [P1[0]]
     B2 = point1[1] * P1[2] - [P1[1]]
     B3 = point2[0] * P2[2] - [P2[0]]
     B4 = point2[1] * P2[2] - [P2[1]]
+    """
+    B1 = np.transpose(P1[2]) * point1[1] - np.transpose(P1[0])
+    B2 = np.transpose(P1[2]) * point1[0] - np.transpose(P1[1])
+    B3 = np.transpose(P2[2]) * point2[1] - np.transpose(P2[0])
+    B4 = np.transpose(P2[2]) * point2[0] - np.transpose(P2[1])
     
-    A = np.vstack((B1,B2,B3, B4))
+    B = np.vstack((B1,B2,B3, B4))
     
-    u, s, vh = np.linalg.svd(A)
+    u, s, vh = np.linalg.svd(B)
+    vh = np.transpose(vh)
+    temp = vh[:,-1]
     
-    #temp = vh[:,3]
-    temp = vh[3]
-    
-    point = temp/temp[3]
+    point = temp/temp[-1]
     point = [point[0],point[1],point[2]]
     all3dp[i] = point
 
 from mpl_toolkits import mplot3d
 ax = plt.axes(projection='3d')
-ax.view_init(60, 100)
-ax.scatter3D(all3dp[:,0], all3dp[:,1], all3dp[:,2], cmap='Greens', s=.1)
+ax.view_init(90, 90)
+ax.scatter3D(all3dp[:,0], all3dp[:,1], all3dp[:,2], cmap='Greens', s=.05)
 
 
+
+"""
+
+#print(q11)
+point2 = [801.831288657782,251];
+point1 = [1251,251];
+    
+# do the triangulation
+B1 = np.transpose(P1[2]) * point1[0] - np.transpose(P1[0])
+B2 = np.transpose(P1[2]) * point1[1] - np.transpose(P1[1])
+B3 = np.transpose(P2[2]) * point2[0] - np.transpose(P2[0])
+B4 = np.transpose(P2[2]) * point2[1] - np.transpose(P2[1])
+    
+B = np.vstack((B1,B2,B3, B4))
+    
+u, s, vh = np.linalg.svd(B)
+    
+vh = np.transpose(vh)
+
+temp = vh[:,-1]
+    
+point = temp/temp[-1]
+point = [point[0],point[1],point[2]]
+    
 
 #import plotly.graph_objects as go
 #import numpy as np
@@ -156,7 +199,7 @@ ax.scatter3D(all3dp[:,0], all3dp[:,1], all3dp[:,2], cmap='Greens', s=.1)
 #fig.show()
 
 
-
+"""
 #point1 = q1.iloc[0];
 #point2 = q2.iloc[0];
 
