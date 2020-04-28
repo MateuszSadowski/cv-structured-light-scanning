@@ -70,6 +70,8 @@ retval, cameraM1, distCoeffs1, cameraM2, distCoeffs2, R, T, E, F = cv2.stereoCal
 #E Essential matrix
 #F  Fundamental matrix
 
+
+#This is where we create our own P matrix, we need to make it work
 P1 = meth.calcProjectionM(R, T, F, cameraM1)
 P2 = meth.calcProjectionM(R, T, F, cameraM2)
 
@@ -78,14 +80,13 @@ P2 = meth.calcProjectionM(R, T, F, cameraM2)
 #P4 = np.matrix([[1591.9, -26.0076, 1.1688, -2.6668e+05],[-0.7923, 1.6583, 587.7426, 9.5383e-11],[-0.0560, 0.0057, 0.9984, 6.7502e-14]])
     
 
+#Their P with rectification
 P1 = [[1.5919e+03, -26.0076, 1.1688e+03, 0],[-0.7923, 1.6583e+03, 587.7426, 0],[-0.0560, 0.0057, 0.9984, 0]]
-
 P2 = [[1.5919e+03, -26.0076, 1.1688e+03, -2.6668e+05],[-0.7923, 1.6583e+03, 587.7426, 9.5383e-11],[-0.0560, 0.0057, 0.9984, 6.7502e-14]]
-   
 
-
-P1 = [[1.6552e+03, 0, 634.58, 0],[0, 1.6557e+03, 511.6732, 0],[0, 0, 1, 0]]
-P2 = [[1.4494e+03, 50.9313, 1.0304e+03, -2.4227e+05],[-168.3507, 1.6697e+03, 468.7081, 2.8061e+04],[-0.2524, 0.0101, 0.9676, 31.8761]]
+#Their P without rectification
+#P1 = [[1.6552e+03, 0, 634.58, 0],[0, 1.6557e+03, 511.6732, 0],[0, 0, 1, 0]]
+#P2 = [[1.4494e+03, 50.9313, 1.0304e+03, -2.4227e+05],[-168.3507, 1.6697e+03, 468.7081, 2.8061e+04],[-0.2524, 0.0101, 0.9676, 31.8761]]
     
  
 
@@ -117,14 +118,6 @@ q2_1 = np.c_[q2,[1]*len(q2)]
 points = [[q1.iloc[:,0], q1.iloc[:,1]],[q2.iloc[:,0], q2.iloc[:,1]]]
 ps = [P1,P2]
 
-#x1 = [P1[0,:]*q1_1,]
-
-#hope = cv2.triangulatePoints(points, ps)
-
-
-
-#function point3d = triangulateOnePoint(point1, point2, P1, P2)
-
 #P1 = np.matrix(P1)
 #P2 = np.matrix(P2)
 all3dp = np.empty([len(q1_1), 3])
@@ -136,11 +129,13 @@ for i, (q11, q22) in enumerate(zip(q1_1, q2_1)):
     
     # do the triangulation
     """
+        #Use these four when we don't define out own P
     B1 = point1[0] * P1[2] - [P1[0]]
     B2 = point1[1] * P1[2] - [P1[1]]
     B3 = point2[0] * P2[2] - [P2[0]]
     B4 = point2[1] * P2[2] - [P2[1]]
     """
+    #Use these four when defining our own P as above
     B1 = np.transpose(P1[2]) * point1[1] - np.transpose(P1[0])
     B2 = np.transpose(P1[2]) * point1[0] - np.transpose(P1[1])
     B3 = np.transpose(P2[2]) * point2[1] - np.transpose(P2[0])
@@ -162,66 +157,3 @@ ax.view_init(90, 90)
 ax.scatter3D(all3dp[:,0], all3dp[:,1], all3dp[:,2], cmap='Greens', s=.05)
 
 
-
-"""
-
-#print(q11)
-point2 = [801.831288657782,251];
-point1 = [1251,251];
-    
-# do the triangulation
-B1 = np.transpose(P1[2]) * point1[0] - np.transpose(P1[0])
-B2 = np.transpose(P1[2]) * point1[1] - np.transpose(P1[1])
-B3 = np.transpose(P2[2]) * point2[0] - np.transpose(P2[0])
-B4 = np.transpose(P2[2]) * point2[1] - np.transpose(P2[1])
-    
-B = np.vstack((B1,B2,B3, B4))
-    
-u, s, vh = np.linalg.svd(B)
-    
-vh = np.transpose(vh)
-
-temp = vh[:,-1]
-    
-point = temp/temp[-1]
-point = [point[0],point[1],point[2]]
-    
-
-#import plotly.graph_objects as go
-#import numpy as np
-
-# Helix equation
-#t = np.linspace(0, 10, 50)
-#x, y, z = np.cos(t), np.sin(t), t
-
-#fig = go.Figure(data=[go.Scatter3d(x=all3dp[:,0], y=all3dp[:,1], z=all3dp[:,2],
-                #                   mode='markers')])
-#fig.show()
-
-
-"""
-#point1 = q1.iloc[0];
-#point2 = q2.iloc[0];
-
-# do the triangulation
-#A = (4,4)
-#np.zeros(A)
-#B1 = point1[0] * P1[2] - [P1[0]]
-#B2 = point1[1] * P1[2] - [P1[1]]
-#B3 = point2[0] * P2[2] - [P2[0]]
-#B4 = point2[1] * P2[2] - [P2[1]]
-
-#A = np.vstack((B1,B2,B3, B4))
-
-#u, s, vh = np.linalg.svd(A)
-
-#temp = vh[:,3]
-
-#point = temp/temp[3]
-#point = [point[0],point[1],point[2]]
-
-
-#X = V.iloc[:,-1]
-#X = X/X(-1)
-
-#point3d = X([0,1,2])
