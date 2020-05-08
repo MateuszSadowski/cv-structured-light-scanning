@@ -5,18 +5,13 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import os.path
 
+import helper
+
 PATH_TO_IMAGES = 'angel_rect/'
 PATH_TO_IMAGES_SEC_CAM1 = 'angel_rect/secondary_cam1/'
 PATH_TO_IMAGES_SEC_CAM2 = 'angel_rect/secondary_cam2/'
 LOW_INTENSITY_CUTOFF = 0.1 * 255
 HIGH_INTENSITY_CUTOFF = 0.9 * 255
-
-def loadImagesInGrayscale(images):
-    print('loadImagesInGrayscale')
-    gray = []
-    for image in images:
-        gray.append(cv2.imread(image, cv2.IMREAD_GRAYSCALE))
-    return gray
 
 def getMask(image):
     print('getMask')
@@ -65,23 +60,6 @@ def decodePhase(primary, secondary):
             heterodynePhase[x][y] = (wrappedPrimary - wrappedSecondary) % (2 * np.pi)
 
     return heterodynePhase
-
-def maskImage(img, mask):
-    print('maskImage')
-    imgHeight = len(img)
-    imgWidth = len(img[0]) if imgHeight > 0 else 0
-    maskHeight = len(mask)
-    maskWidth = len(mask[0]) if maskHeight > 0 else 0
-
-    if imgHeight != maskHeight or imgWidth != maskWidth:
-        print('Image and mask have to be of the same size')
-        return -1
-
-    for x in range(imgHeight):
-        for y in range (imgWidth):
-            img[x][y] = img[x][y] * mask[x][y]
-    
-    return img
 
 def registerContinous(code1, code2, mask1, mask2):
     imgWidth = len(code1)
@@ -136,13 +114,13 @@ if os.path.isfile('q1.xlsx') and os.path.isfile('q2.xlsx'):
     q2 = q2.T
 else:
     # === Load images and create masks ===
-    imagesRefCam1 = loadImagesInGrayscale(imagesRefCam1Fn)
-    imagesPrimaryPhaseCam1 = loadImagesInGrayscale(imagesPrimaryPhaseCam1Fn)
-    imagesSecondaryPhaseCam1 = loadImagesInGrayscale(imagesSecondaryPhaseCam1Fn)
+    imagesRefCam1 = helper.loadImagesInGrayscale(imagesRefCam1Fn)
+    imagesPrimaryPhaseCam1 = helper.loadImagesInGrayscale(imagesPrimaryPhaseCam1Fn)
+    imagesSecondaryPhaseCam1 = helper.loadImagesInGrayscale(imagesSecondaryPhaseCam1Fn)
 
-    imagesRefCam2 = loadImagesInGrayscale(imagesRefCam2Fn)
-    imagesPrimaryPhaseCam2 = loadImagesInGrayscale(imagesPrimaryPhaseCam2Fn)
-    imagesSecondaryPhaseCam2 = loadImagesInGrayscale(imagesSecondaryPhaseCam2Fn)
+    imagesRefCam2 = helper.loadImagesInGrayscale(imagesRefCam2Fn)
+    imagesPrimaryPhaseCam2 = helper.loadImagesInGrayscale(imagesPrimaryPhaseCam2Fn)
+    imagesSecondaryPhaseCam2 = helper.loadImagesInGrayscale(imagesSecondaryPhaseCam2Fn)
 
     imageMaskCam1 = getMask(imagesRefCam1[0])
     imageMaskCam2 = getMask(imagesRefCam2[0])
@@ -153,11 +131,11 @@ else:
     
     # === Decode phase ===
     unwrappedPhaseCam1 = decodePhase(imagesPrimaryPhaseCam1, imagesSecondaryPhaseCam1)
-    maskedCam1 = maskImage(unwrappedPhaseCam1, imageMaskCam1)
+    maskedCam1 = helper.maskImage(unwrappedPhaseCam1, imageMaskCam1)
     # plt.imshow(maskedCam1, cmap="gray") 
     # plt.show()
     unwrappedPhaseCam2 = decodePhase(imagesPrimaryPhaseCam2, imagesSecondaryPhaseCam2)
-    maskedCam2 = maskImage(unwrappedPhaseCam2, imageMaskCam2)
+    maskedCam2 = helper.maskImage(unwrappedPhaseCam2, imageMaskCam2)
 
     # === Find point matches ===
     q1, q2 = registerContinous(maskedCam1, maskedCam2, imageMaskCam1, imageMaskCam2)
