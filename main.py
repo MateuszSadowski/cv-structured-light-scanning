@@ -5,9 +5,9 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import os.path
 
-PATH_TO_IMAGES = '../angel_rect/'
-PATH_TO_IMAGES_SEC_CAM1 = '../angel_rect/secondary_cam1/'
-PATH_TO_IMAGES_SEC_CAM2 = '../angel_rect/secondary_cam2/'
+PATH_TO_IMAGES = 'angel_rect/'
+PATH_TO_IMAGES_SEC_CAM1 = 'angel_rect/secondary_cam1/'
+PATH_TO_IMAGES_SEC_CAM2 = 'angel_rect/secondary_cam2/'
 LOW_INTENSITY_CUTOFF = 0.1 * 255
 HIGH_INTENSITY_CUTOFF = 0.9 * 255
 
