@@ -18,7 +18,9 @@ def getDisplacement(mask1, mask2):
     cam2HeightVal = 0
 
     for i in range(len(mask1)):
-        if mask1[i].max() == 1 and  cam1HeightVal == 0:
+        if cam1HeightVal != 0 and cam2HeightVal != 0:
+            break
+        if mask1[i].max() == 1 and cam1HeightVal == 0:
             cam1HeightVal = i
         if mask2[i].max() == 1 and cam2HeightVal == 0:
             cam2HeightVal = i
@@ -44,26 +46,34 @@ def getColorDifference(color1, color2):
     # TODO: convert to int
     return (color1[0] - color2[0])*(color1[0] - color2[0]) + (color1[1] - color2[1])*(color1[1] - color2[1]) + (color1[2] - color2[2])*(color1[2] - color2[2])
 
-def registerColor(img1, img2, mask1, mask2):
-    imgWidth = len(img1)
-    imgHeight = len(img1[0]) if imgWidth > 0 else 0
+def registerColor(img1, img2, mask1, mask2, d=0):
+    imgHeight = len(img1)
+    imgWidth = len(img1[0]) if imgHeight > 0 else 0
     q1 = []
     q2 = []
     
-    for y in range(imgHeight):
-        for x in range(imgWidth):
-            if mask1[x][y] != 0:
-                color1 = img1[x][y]
+    # TODO: pass start row from getDisplacement here
+    # TODO: print out row, col to know progress 
+    for row in range(imgHeight):
+        if row - d < 0:
+            continue
+        elif row - d >= imgHeight:
+            break
+        else:
+            row2 = row - d
+        for col in range(imgWidth):
+            if mask1[row][col] != 0:
+                color1 = img1[row][col]
                 minDiff = float("inf")
                 minPixel = [-1, -1]
-                for y2 in range(imgWidth):
-                    if mask2[x][y2] != 0:
-                        color2 = img2[x][y2]
+                for col2 in range(imgHeight):
+                    if mask2[row2][col2] != 0:
+                        color2 = img2[row2][col2]
                         diff = getColorDifference(color1, color2)
                         if diff < minDiff:
                             minDiff = diff
-                            minPixel = [x, y2]
-                q1.append([x, y])
+                            minPixel = [row2, col2] # TODO: should it be row2 or row for triangulation?
+                q1.append([row, col])
                 q2.append(minPixel)
     return q1, q2
 
@@ -79,21 +89,17 @@ maskedCam1 = helper.maskImage(cam1, mask1)
 maskedCam2 = helper.maskImage(cam2, mask2)
 # maskedCam2 = cv2.bitwise_and(cam2, cam2, mask=mask2)
 
-# cv2.imshow('cam1', maskedCam1)
-# cv2.waitKey()
-# cv2.imshow('cam2', maskedCam2)
-# cv2.waitKey()
+cv2.imshow('cam1', maskedCam1)
+cv2.waitKey()
+cv2.imshow('cam2', maskedCam2)
+cv2.waitKey()
 
 d = getDisplacement(mask1, mask2)
-print(d)
 
-'''
-q1, q2 = registerColor(cam1, cam2, mask1, mask2)
+q1, q2 = registerColor(cam1, cam2, mask1, mask2, d)
 
 fName = 'q1q2.csv'
 with open(fName, 'w+', newline='') as file:
     writer = csv.writer(file, quoting = csv.QUOTE_NONNUMERIC)
-    writer.writerow(["q1", " ", "q2"])
     for i in range(len(q1)):
-        writer.writerow([q1[i], " ", q2[i]])
-'''
+        writer.writerow([q1[i][0], q1[i][1], "", q2[i][0], q2[i][1]])
